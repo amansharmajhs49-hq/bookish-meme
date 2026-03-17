@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ALTER COLUMN advance_balance DROP NOT NULL;

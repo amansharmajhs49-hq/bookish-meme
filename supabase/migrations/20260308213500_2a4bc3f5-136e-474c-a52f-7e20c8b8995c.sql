@@ -1,0 +1,1 @@
+ALTER TABLE public.body_progress ADD COLUMN IF NOT EXISTS height numeric NULL;
