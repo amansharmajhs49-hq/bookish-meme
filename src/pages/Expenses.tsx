@@ -664,5 +664,7 @@ export default function Expenses() {
       <AddExpenseModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditExpense(null); }} editExpense={editExpense} />
       <MobileNav />
     </div>
+  </div>
+  </div>
   );
 }

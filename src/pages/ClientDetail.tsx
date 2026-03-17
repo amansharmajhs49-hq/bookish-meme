@@ -52,7 +52,6 @@ import { MobileNav } from '@/components/MobileNav';
 import { ClientDetailSkeleton } from '@/components/DashboardSkeleton';
 import { BodyProgressSection } from '@/components/BodyProgressSection';
 import { MemberCardDownload } from '@/components/MemberCardDownload';
-import { MemberCardDownload } from '@/components/MemberCardDownload';
 import {
   formatCurrency,
   formatDate,
@@ -63,14 +62,13 @@ import {
 import { generateReminderMessage, getWhatsAppLink, isWithinReminderHours, generatePaymentMessage, generateReceiptMessage } from '@/lib/whatsapp';
 import { generateSmartReminderMessage } from '@/lib/aiWhatsapp';
 import { useToast } from '@/hooks/use-toast';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { Payment, Join, ProductPurchase } from '@/lib/types';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { formatDistanceToNow } from 'date-fns';
 
 // Sort helper: newest created_at first
 function sortByCreatedDesc<T extends { created_at: string }>(items: T[]): T[] {
@@ -876,9 +874,9 @@ export default function ClientDetail() {
             </button>
           )}
 
-          <MemberCardDownload client={client} />
-
           <button
+            onClick={async () => {
+              const { data } = await supabase.from('clients').select('pin').eq('id', client.id).single();
               const pin = (data as any)?.pin;
               if (!pin) {
                 toast({ title: 'No PIN set', description: 'Edit this client to set a portal PIN first.', variant: 'destructive' });

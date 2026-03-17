@@ -1,6 +1,5 @@
 import { AlertTriangle, IndianRupee } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface DuesWarningBannerProps {
   dueAmount: number;

@@ -6,11 +6,10 @@ import { useLogExtension } from '@/hooks/useExtensionLogs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { calculateExpiryDate, formatDate, formatCurrency } from '@/lib/utils';
+import { calculateExpiryDate, formatDate, formatCurrency, cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Join } from '@/lib/types';
 import { createAuditLog } from '@/hooks/useAuditLog';
-import { cn } from '@/lib/utils';
 
 interface ExtendMembershipModalProps {
   isOpen: boolean;

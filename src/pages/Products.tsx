@@ -205,5 +205,6 @@ function InactiveProductRow({ product }: { product: Product }) {
         </button>
       </div>
     </div>
+  </div>
   );
 }

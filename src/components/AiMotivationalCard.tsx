@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, TrendingUp, Users, Flame } from 'lucide-react';
+import { Sparkles, TrendingUp, Users, Flame, Lock } from 'lucide-react';
 import { fetchAiQuotesBatch } from '@/lib/aiQuotes';
 import { useIsFeatureLocked } from '@/hooks/useSubscription';
-import { Lock } from 'lucide-react';
 
 interface AiMotivationalCardProps {
   clientName: string;

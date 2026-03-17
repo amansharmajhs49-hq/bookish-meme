@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Download, Upload, LogOut, Dumbbell, FileText, Shield, UserPlus,
@@ -21,19 +21,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuditLogs } from '@/hooks/useAuditLog';
 import { MobileNav } from '@/components/MobileNav';
-import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme, ACCENT_OPTIONS } from '@/hooks/useTheme';
 import {
   exportClients, exportMemberships, exportPayments, exportProducts,
   exportFullData, exportCSV,
 } from '@/lib/export';
-import { useAnnouncements, useDeleteAnnouncement } from '@/hooks/useAnnouncements';
+import { useAnnouncements, useDeleteAnnouncement, type Announcement } from '@/hooks/useAnnouncements';
 import { AnnouncementModal } from '@/components/AnnouncementModal';
 import { BulkWhatsAppSender } from '@/components/BulkWhatsAppSender';
 import { WebsiteSettingsSection } from '@/components/WebsiteSettingsSection';
 import { SuggestionsViewer } from '@/components/SuggestionsViewer';
-import type { Announcement } from '@/hooks/useAnnouncements';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
