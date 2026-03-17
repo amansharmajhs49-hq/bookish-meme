@@ -543,8 +543,6 @@ export function DashboardCharts({ clients, onFilterClick }: DashboardChartsProps
         </div>
       )}
     </div>
-  </div>
-  </div>
-  </div>
+    </div>
   );
 }

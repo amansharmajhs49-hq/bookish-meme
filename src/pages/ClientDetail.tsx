@@ -1137,7 +1137,5 @@ export default function ClientDetail() {
         clientName={client.name}
       />
     </div>
-  </div>
-  </div>
   );
 }

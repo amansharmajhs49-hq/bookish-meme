@@ -326,9 +326,6 @@ return result;
         )}
       </div>
 
-      {/* close sticky header wrapper */}
-      </div>
-
       <motion.button
         className="fixed bottom-24 right-5 p-4 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40 z-40"
         onClick={() => setShowAddModal(true)}
