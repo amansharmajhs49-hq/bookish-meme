@@ -94,8 +94,10 @@ export function useSwipeNavigation() {
 
       touchRef.current = null;
 
-      // Don't navigate if swipe started inside a horizontally scrollable element
-      if (blocked) return;
+      // Don't navigate if swipe started inside a horizontally scrollable element 
+      // OR if we are on a page/modal that explicitly blocks swiping
+      // OR if any modal/dialog/drawer is open
+      if (blocked || document.querySelector('[data-swipe-ignore="true"]') || document.querySelector('[role="dialog"]')) return;
 
       const absDeltaX = Math.abs(deltaX);
       const absDeltaY = Math.abs(deltaY);

@@ -210,26 +210,31 @@ export function PortalOnboarding({ clientId, clientName, onComplete }: PortalOnb
   const [saving, setSaving] = useState(false);
   const [exiting, setExiting] = useState(false);
   const audioPlayed = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    if (scene < 3) {
-      timeout = setTimeout(() => {
-        const next = scene + 1;
-        if (next >= 2) setShowSweep(true);
-        setScene(next);
-        if (next === 3) {
-          try { navigator.vibrate?.([30, 15, 30, 15, 50]); } catch {}
-          if (!audioPlayed.current) {
-            audioPlayed.current = true;
-            playChime();
-          }
-          setShowCelebration(true);
-          // Show button 2s after identity line for cinematic pacing
-          setTimeout(() => setShowButton(true), 3600);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (scene >= 3) return;
+    const delay = scene === 0 ? 600 : SCENE_DURATIONS[scene - 1];
+    const timeout = setTimeout(() => {
+      if (!mountedRef.current) return;
+      const next = scene + 1;
+      if (next >= 2) setShowSweep(true);
+      setScene(next);
+      if (next === 3) {
+        try { navigator.vibrate?.([30, 15, 30, 15, 50]); } catch {}
+        if (!audioPlayed.current) {
+          audioPlayed.current = true;
+          playChime();
         }
-      }, scene === 0 ? 600 : SCENE_DURATIONS[scene - 1]);
-    }
+        setShowCelebration(true);
+        setTimeout(() => { if (mountedRef.current) setShowButton(true); }, 3600);
+      }
+    }, delay);
     return () => clearTimeout(timeout);
   }, [scene]);
 
@@ -308,7 +313,7 @@ export function PortalOnboarding({ clientId, clientName, onComplete }: PortalOnb
                 className="text-[clamp(1.75rem,6vw,2.75rem)] font-bold text-foreground tracking-tight leading-tight"
                 style={{ textShadow: '0 0 30px hsl(var(--primary) / 0.03)' }}
               >
-                Welcome, {clientName}
+                Welcome, {clientName.trim().split(/\s+/)[0]}
               </h1>
             </motion.div>
           )}

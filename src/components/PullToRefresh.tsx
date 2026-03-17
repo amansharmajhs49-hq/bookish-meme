@@ -37,12 +37,14 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
     if (!pulling.current || isRefreshing) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
+    
     if (diff > 0) {
-      // Rubber-band resistance
+      // Pulling down
       const distance = Math.min(MAX_PULL, diff * 0.45);
       pullDistance.set(distance);
       currentPull.current = distance;
     } else {
+      // Scrolling or pulling up
       pulling.current = false;
       animate(pullDistance, 0, { type: 'spring', stiffness: 300, damping: 25 });
       currentPull.current = 0;
@@ -83,7 +85,8 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
       >
         <motion.div
           className={cn(
-            'flex items-center justify-center rounded-full h-9 w-9 bg-primary/10 border border-primary/20',
+            'flex items-center justify-center rounded-full h-10 w-10 bg-card border shadow-lg transition-colors',
+            currentPull.current >= THRESHOLD ? 'border-primary/50 bg-primary/5' : 'border-border',
             isRefreshing && 'animate-spin'
           )}
           style={{
@@ -92,7 +95,10 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
             scale: indicatorScale,
           }}
         >
-          <RefreshCw className="h-4 w-4 text-primary" />
+          <RefreshCw className={cn(
+            "h-5 w-5 transition-colors",
+            currentPull.current >= THRESHOLD ? "text-primary scale-110" : "text-muted-foreground"
+          )} />
         </motion.div>
       </motion.div>
 

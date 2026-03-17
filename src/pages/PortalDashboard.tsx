@@ -6,7 +6,7 @@ import {
   LogOut, Calendar, IndianRupee, Activity,
   ShoppingBag, TrendingDown, TrendingUp, Minus, Scale, ChevronDown, ChevronUp,
   AlertTriangle, Clock, Flame, Heart, Megaphone, MessageSquarePlus, Phone, X, Download, Loader2,
-  Sun, Moon, Monitor, Globe, Dumbbell, Zap, Crown
+  Sun, Moon, Monitor, Globe, Dumbbell, Zap, Crown, Users,
 } from 'lucide-react';
 import { BrandedLoader } from '@/components/BrandedLoader';
 import { PortalNotificationBell } from '@/components/PortalNotificationBell';
@@ -21,6 +21,7 @@ import { generateReceipt } from '@/lib/receipt';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AiQuoteCard } from '@/components/AiQuoteCard';
 import { AiMotivationalCard } from '@/components/AiMotivationalCard';
+import { PortalProgressSection } from '@/components/PortalProgressSection';
 
 interface PortalData {
   client: any;
@@ -37,7 +38,7 @@ export default function PortalDashboard() {
   const [error, setError] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    membership: true, payments: false, products: false, progress: false,
+    membership: false, payments: true, products: false, progress: true,
   });
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const { mode, setMode } = useTheme();
@@ -50,7 +51,8 @@ export default function PortalDashboard() {
 
   const clientId = sessionStorage.getItem('portal_client_id');
   const pin = sessionStorage.getItem('portal_pin');
-  const clientName = sessionStorage.getItem('portal_name');
+  const rawClientName = sessionStorage.getItem('portal_name');
+  const clientName = rawClientName ? rawClientName.trim().split(/\s+/)[0] : null;
 
   useEffect(() => {
     if (!clientId || !pin) {
@@ -190,7 +192,7 @@ export default function PortalDashboard() {
         {showOnboarding && (
           <PortalOnboarding
             clientId={client.id}
-            clientName={clientName || client.name}
+            clientName={clientName || client.name.trim().split(/\s+/)[0]}
             onComplete={() => setShowOnboarding(false)}
           />
         )}
@@ -211,8 +213,8 @@ export default function PortalDashboard() {
             <Dumbbell className="w-5 h-5 text-primary" />
           </motion.div>
           <div>
-            <h1 className="font-semibold text-foreground text-sm leading-tight">{clientName || client.name}</h1>
-            <p className="text-xs text-muted-foreground">Member Portal</p>
+            <h1 className="font-bold text-foreground text-sm leading-tight">{ws.gym_name || 'Aesthetic Gym'}</h1>
+            <p className="text-[10px] text-muted-foreground">{clientName || client.name.trim().split(/\s+/)[0]}'s Portal</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -336,6 +338,45 @@ export default function PortalDashboard() {
             )}
 
 
+            {/* Due amount — always visible */}
+            {membership.netDue > 0 && (
+              <div className="relative mx-4 mb-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-destructive">₹{membership.netDue.toLocaleString('en-IN')} due</p>
+                      <p className="text-[10px] text-destructive/70">Clear dues to maintain membership access</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Renewal CTA when expired or expiring soon */}
+            {(membership.status === 'EXPIRED' || (membership.daysLeft >= 0 && membership.daysLeft <= 3)) && (
+              <div className="relative mx-4 mb-3">
+                <div className={`flex items-center justify-between p-3 rounded-xl border ${membership.status === 'EXPIRED' ? 'bg-destructive/8 border-destructive/20' : 'bg-amber-500/8 border-amber-500/20'}`}>
+                  <div>
+                    <p className={`text-xs font-bold ${membership.status === 'EXPIRED' ? 'text-destructive' : 'text-amber-500'}`}>
+                      {membership.status === 'EXPIRED' ? 'Membership expired — renew now' : `Only ${membership.daysLeft} day${membership.daysLeft !== 1 ? 's' : ''} left!`}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Contact us to continue your training</p>
+                  </div>
+                  {ws.whatsapp_number && (
+                    <a
+                      href={`https://wa.me/${ws.whatsapp_number}?text=${encodeURIComponent(`Hi, I'd like to renew my membership at ${ws.gym_name || 'the gym'}!`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`shrink-0 px-3 py-1.5 rounded-lg text-white text-xs font-bold ${membership.status === 'EXPIRED' ? 'bg-destructive hover:bg-destructive/90' : 'bg-amber-500 hover:bg-amber-600'} transition-colors`}
+                    >
+                      Renew →
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Member since */}
             <div className="relative px-4 pb-3">
               {firstJoinDate && (
@@ -355,6 +396,8 @@ export default function PortalDashboard() {
                 membershipStatus={membership.status}
                 netDue={membership.netDue}
                 joinDate={membership.latestJoin?.join_date}
+                isCustomPrice={membership.discount > 0}
+                paidAmount={membership.latestJoin?.custom_price ?? membership.latestJoin?.plan?.price}
               />
             </div>
           </motion.div>
@@ -455,41 +498,13 @@ export default function PortalDashboard() {
         </CollapsibleSection>
 
         {/* Body Progress */}
-        <CollapsibleSection
-          title="Body Progress"
-          icon={<Activity className="w-4 h-4" />}
-          count={progress.length}
+        <PortalProgressSection
+          progress={progress}
           expanded={expandedSections.progress}
           onToggle={() => toggleSection('progress')}
-          delay={0.35}
-        >
-          {progress.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No progress entries yet</p>
-          ) : (
-            <div className="space-y-3">
-              {progress.slice(0, 5).map((entry: any, i: number) => {
-                const prev = progress[i + 1];
-                return (
-                  <div key={entry.id} className="py-2 border-b border-border last:border-0">
-                    <p className="text-xs text-muted-foreground mb-1.5">{format(parseISO(entry.recorded_at), 'dd MMM yyyy')}</p>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      {entry.weight && (
-                        <ProgressItem label="Weight" value={`${entry.weight} kg`} prev={prev?.weight} lower />
-                      )}
-                      {entry.body_fat && (
-                        <ProgressItem label="Body Fat" value={`${entry.body_fat}%`} prev={prev?.body_fat} lower />
-                      )}
-                      {entry.chest && <ProgressItem label="Chest" value={`${entry.chest} cm`} prev={prev?.chest} />}
-                      {entry.waist && <ProgressItem label="Waist" value={`${entry.waist} cm`} prev={prev?.waist} lower />}
-                      {entry.biceps && <ProgressItem label="Biceps" value={`${entry.biceps} cm`} prev={prev?.biceps} />}
-                      {entry.thighs && <ProgressItem label="Thighs" value={`${entry.thighs} cm`} prev={prev?.thighs} />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CollapsibleSection>
+          clientId={client.id}
+          onProgressRefresh={fetchData}
+        />
 
         {/* Membership History */}
         <CollapsibleSection
@@ -504,17 +519,28 @@ export default function PortalDashboard() {
             <p className="text-sm text-muted-foreground py-2">No memberships yet</p>
           ) : (
             <div className="space-y-2">
-              {joins.map((j: any) => (
-                <div key={j.id} className="py-2 border-b border-border last:border-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">{j.plan?.name || 'Custom Plan'}</p>
-                    <p className="text-sm text-foreground">₹{(j.custom_price ?? j.plan?.price ?? 0).toLocaleString('en-IN')}</p>
+              {joins.map((j: any) => {
+                const joinDate = parseISO(j.join_date);
+                const expiryDate = parseISO(j.expiry_date);
+                const months = Math.round(Math.abs(expiryDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+                const durationLabel = months >= 12 ? `${Math.round(months/12)} year${months >= 24 ? 's' : ''}` : `${months} month${months !== 1 ? 's' : ''}`;
+                return (
+                  <div key={j.id} className="py-2.5 border-b border-border last:border-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{j.plan?.name || 'Custom Plan'}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {format(joinDate, 'd MMM yyyy')} – {format(expiryDate, 'd MMM yyyy')}
+                        </p>
+                        <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {durationLabel}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-foreground shrink-0">₹{(j.custom_price ?? j.plan?.price ?? 0).toLocaleString('en-IN')}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(j.join_date), 'dd MMM')} → {format(parseISO(j.expiry_date), 'dd MMM yyyy')}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CollapsibleSection>
@@ -599,15 +625,19 @@ function PaymentRow({ payment, client, joins, purchases, allPayments }: {
     >
       <div>
         <p className="text-sm font-medium text-foreground">₹{Number(payment.amount).toLocaleString('en-IN')}</p>
-        <p className="text-xs text-muted-foreground">{format(parseISO(payment.payment_date), 'dd MMM yyyy')} · {payment.payment_method}</p>
+        <p className="text-xs text-muted-foreground">{format(parseISO(payment.payment_date), 'dd MMM yyyy')} · {payment.payment_method === 'cash' ? 'Cash' : 'Online'}</p>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`text-xs px-2 py-0.5 rounded-full ${
-          payment.payment_type === 'advance' ? 'bg-info/20 text-info' :
-          payment.payment_type === 'product' ? 'bg-accent/20 text-accent' :
-          'bg-success/20 text-success'
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+          payment.payment_type === 'advance' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+          payment.payment_type === 'product' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
+          payment.payment_type === 'mixed' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+          'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
         }`}>
-          {payment.payment_type}
+          {payment.payment_type === 'advance' ? 'Advance' :
+           payment.payment_type === 'product' ? 'Supplement' :
+           payment.payment_type === 'mixed' ? 'Combined' :
+           'Membership'}
         </span>
         <motion.button
           whileTap={{ scale: 0.8 }}
@@ -662,23 +692,6 @@ function CollapsibleSection({ title, icon, count, expanded, onToggle, children, 
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-function ProgressItem({ label, value, prev, lower }: {
-  label: string; value: string; prev?: number; lower?: boolean;
-}) {
-  const trend = prev != null ? (parseFloat(value) > prev ? (lower ? 'bad' : 'good') : parseFloat(value) < prev ? (lower ? 'good' : 'bad') : 'same') : null;
-  return (
-    <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <div className="flex items-center gap-1">
-        <p className="font-medium text-foreground">{value}</p>
-        {trend === 'good' && <TrendingUp className="w-3 h-3 text-success" />}
-        {trend === 'bad' && <TrendingDown className="w-3 h-3 text-destructive" />}
-        {trend === 'same' && <Minus className="w-3 h-3 text-muted-foreground" />}
-      </div>
-    </div>
   );
 }
 
@@ -792,7 +805,179 @@ function MembershipNote({ status, daysLeft, netDue }: { status: string; daysLeft
 function PortalCTAs({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showRefer, setShowRefer] = useState(false);
+  const [referCopied, setReferCopied] = useState(false);
   const ws = useWebsiteSettings();
+
+  const portalUrl = `${window.location.origin}/portal`;
+  const gymName = ws.gym_name || 'Aesthetic Gym';
+  const referMessage = `Hey! 👋 I've been training at *${gymName}* and it's been amazing 💪\n\nThey have a great membership portal where you can track your progress, payments and more.\n\n🏋️ Check it out: ${portalUrl}\n\nAsk them for your login PIN when you join!`;
+
+  const handleCopyRefer = async () => {
+    try {
+      await navigator.clipboard.writeText(referMessage);
+      setReferCopied(true);
+      setTimeout(() => setReferCopied(false), 2500);
+    } catch {}
+  };
+
+  const handleWhatsAppRefer = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(referMessage)}`, '_blank');
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, duration: 0.4 }}
+        className="grid grid-cols-3 gap-2"
+      >
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowSuggestion(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-xl border border-primary/15 bg-primary/[0.03] hover:bg-primary/[0.06] transition-colors"
+        >
+          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <MessageSquarePlus className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-[10px] font-semibold text-foreground text-center">Feedback</span>
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowRefer(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] transition-colors"
+        >
+          <div className="h-9 w-9 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <Users className="h-4 w-4 text-emerald-500" />
+          </div>
+          <span className="text-[10px] font-semibold text-foreground text-center">Refer Friend</span>
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowContacts(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-xl border border-primary/15 bg-primary/[0.03] hover:bg-primary/[0.06] transition-colors"
+        >
+          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <Phone className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-[10px] font-semibold text-foreground text-center">Contact</span>
+        </motion.button>
+      </motion.div>
+
+      {/* Refer a Friend Modal */}
+      <AnimatePresence>
+        {showRefer && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowRefer(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg bg-card rounded-t-2xl sm:rounded-2xl p-5 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Refer a Friend</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Share {gymName} with someone you know</p>
+                </div>
+                <button onClick={() => setShowRefer(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><X className="h-4 w-4" /></button>
+              </div>
+
+              {/* Message preview */}
+              <div className="rounded-xl bg-muted/50 border border-border p-3">
+                <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{referMessage}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleWhatsAppRefer}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 text-white font-semibold text-sm hover:bg-emerald-600 transition-colors active:scale-[0.97]"
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                  WhatsApp
+                </button>
+                <button
+                  onClick={handleCopyRefer}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-card font-semibold text-sm hover:bg-muted transition-colors active:scale-[0.97]"
+                >
+                  {referCopied ? (
+                    <><Zap className="h-4 w-4 text-emerald-500" /><span className="text-emerald-500">Copied!</span></>
+                  ) : (
+                    <><Crown className="h-4 w-4" />Copy Text</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Suggestion Modal */}
+      <AnimatePresence>
+        {showSuggestion && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowSuggestion(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg bg-card rounded-t-2xl sm:rounded-2xl p-5 space-y-3"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-foreground">Suggestion Box</h3>
+                <button onClick={() => setShowSuggestion(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><X className="h-4 w-4" /></button>
+              </div>
+              <SuggestionForm clientId={clientId} clientName={clientName} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contacts Modal */}
+      <AnimatePresence>
+        {showContacts && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowContacts(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg bg-card rounded-t-2xl sm:rounded-2xl p-5 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-foreground">Contact Information</h3>
+                <button onClick={() => setShowContacts(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"><X className="h-4 w-4" /></button>
+              </div>
+              <div className="space-y-3">
+                {ws.phone && (
+                  <a href={`tel:${ws.phone}`} className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors active:scale-[0.98]">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-primary" /></div>
+                    <div><p className="text-xs text-muted-foreground">Phone</p><p className="text-sm font-medium text-foreground">{ws.phone}</p></div>
+                  </a>
+                )}
+                {ws.whatsapp_number && (
+                  <a href={`https://wa.me/${ws.whatsapp_number}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors active:scale-[0.98]">
+                    <div className="h-9 w-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0"><MessageSquarePlus className="h-4 w-4 text-success" /></div>
+                    <div><p className="text-xs text-muted-foreground">WhatsApp</p><p className="text-sm font-medium text-foreground">+{ws.whatsapp_number}</p></div>
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
 
   return (
     <>

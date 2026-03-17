@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Trash2, Edit, Receipt, TrendingDown, TrendingUp, RefreshCw,
-  Calendar, BarChart3, PieChart as PieChartIcon, Activity, Target, Wallet, Clock, Download
+  Calendar, BarChart3, PieChart as PieChartIcon, Activity, Target, Wallet, Clock, Download,
+  LockKeyhole
 } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import {
@@ -12,6 +13,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useDeleteExpense, EXPENSE_CATEGORIES, type Expense } from '@/hooks/useExpenses';
 import { useClients } from '@/hooks/useClients';
+import { useIsFeatureLocked } from '@/hooks/useSubscription';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
 import { MobileNav } from '@/components/MobileNav';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -102,6 +104,8 @@ export default function Expenses() {
   const { data: clients } = useClients();
   const deleteExpense = useDeleteExpense();
   const { toast } = useToast();
+  
+  const { isLocked, message: lockMessage } = useIsFeatureLocked('expense_tracker');
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
@@ -112,6 +116,37 @@ export default function Expenses() {
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
   }, [user, loading, navigate]);
+
+  if (isLocked) {
+    return (
+      <div className="page-container min-h-screen">
+        <header className="page-header">
+          <button onClick={() => navigate('/')} className="p-2 rounded-lg hover:bg-muted transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-bold">Expenses</h1>
+        </header>
+        <div className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="p-4 rounded-3xl bg-destructive/10 text-destructive shadow-lg shadow-destructive/10">
+            <LockKeyhole className="h-12 w-12" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold tracking-tight">Feature Locked</h2>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              {lockMessage || "This feature is currently locked. Please contact your host to enable it."}
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
 
   const analytics = useMemo(() => {
     if (!expenses?.length) return { monthly: [], categoryPie: [], thisMonth: 0, lastMonth: 0, recurringTotal: 0, monthlyWithRevenue: [] };

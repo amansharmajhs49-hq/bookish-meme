@@ -20,9 +20,9 @@ export const SORT_OPTIONS: SortConfig[] = [
   { key: 'newest', label: 'Newest First', icon: '🕐' },
   { key: 'oldest', label: 'Oldest First', icon: '🕰️' },
   { key: 'a-z', label: 'A → Z', icon: '🔤' },
-  { key: 'z-a', label: 'Z → A', icon: '🔡' },
-  { key: 'expiry-asc', label: 'Expiry ↑', icon: '📅' },
-  { key: 'expiry-desc', label: 'Expiry ↓', icon: '📆' },
+  { key: 'z-a', label: 'Z → A', icon: '🔤' },
+  { key: 'expiry-asc', label: 'Expiry (Soonest)', icon: '📅' },
+  { key: 'expiry-desc', label: 'Expiry (Latest)', icon: '📅' },
 ];
 
 /** Build a subset of sort options (e.g. exclude expiry for non-membership lists) */
@@ -58,10 +58,32 @@ export function sortItems<T>(
       return sorted.sort((a, b) => getName(b).localeCompare(getName(a)));
     case 'expiry-asc':
       if (!getExpiry) return sorted;
-      return sorted.sort((a, b) => new Date(getExpiry(a)).getTime() - new Date(getExpiry(b)).getTime());
+      return sorted.sort((a, b) => {
+        const dateA = getExpiry(a);
+        const dateB = getExpiry(b);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        const now = Date.now();
+        const diffA = new Date(dateA).getTime() - now;
+        const diffB = new Date(dateB).getTime() - now;
+        // Active (future) memberships first, sorted by soonest expiry
+        // Expired (past) memberships after, sorted by most recently expired
+        const aExpired = diffA < 0;
+        const bExpired = diffB < 0;
+        if (aExpired && !bExpired) return 1;
+        if (!aExpired && bExpired) return -1;
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
+      });
     case 'expiry-desc':
       if (!getExpiry) return sorted;
-      return sorted.sort((a, b) => new Date(getExpiry(b)).getTime() - new Date(getExpiry(a)).getTime());
+      return sorted.sort((a, b) => {
+        const dateA = getExpiry(a);
+        const dateB = getExpiry(b);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
     default:
       return sorted;
   }

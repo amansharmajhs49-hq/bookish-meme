@@ -6,6 +6,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  role: 'moderator' | 'super_admin' | 'admin' | 'user' | null;
+  subscription: {
+    status: 'active' | 'expired' | 'pending' | 'locked';
+    expiry_date: string;
+  } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -17,23 +22,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<'moderator' | 'super_admin' | 'admin' | 'user' | null>(null);
+  const [subscription, setSubscription] = useState<AuthContextType['subscription']>(null);
+
+  const fetchUserRole = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', uid)
+        .single();
+      
+      if (error) throw error;
+      setRole((data as any)?.role || 'user');
+    } catch (err) {
+      console.error('Error fetching user role:', err);
+      setRole('user');
+    }
+  };
+
+  const fetchSubscription = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hosting_subscriptions')
+        .select('status, expiry_date')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error || !data) {
+        // Fallback to active to avoid locking out during errors
+        setSubscription({ status: 'active', expiry_date: new Date(Date.now() + 86400000).toISOString() });
+        return;
+      }
+      setSubscription({
+        status: (data as any).status as any,
+        expiry_date: (data as any).expiry_date,
+      });
+    } catch (err) {
+      console.error('Error fetching subscription:', err);
+      setSubscription({ status: 'active', expiry_date: new Date(Date.now() + 86400000).toISOString() });
+    }
+  };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const handleInit = async (currentSession: Session | null) => {
+      setSession(currentSession);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        await Promise.all([
+          fetchUserRole(currentUser.id),
+          fetchSubscription()
+        ]);
+      } else {
+        setRole(null);
+        setSubscription(null);
+      }
+      setLoading(false);
+    };
+
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        handleInit(session);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      handleInit(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => authSub.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -56,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, subscription, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

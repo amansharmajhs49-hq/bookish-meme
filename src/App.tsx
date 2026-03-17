@@ -25,6 +25,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Portal = lazy(() => import("./pages/Portal"));
 const PortalDashboard = lazy(() => import("./pages/PortalDashboard"));
 const Website = lazy(() => import("./pages/Website"));
+const ModeratorDashboard = lazy(() => import("./pages/ModeratorDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -238,6 +239,7 @@ function AppRoutes() {
                 <Route path="/portal" element={<Portal />} />
                 <Route path="/portal/dashboard" element={<PortalDashboard />} />
                 <Route path="/website" element={<Website />} />
+                <Route path="/moderator" element={<ModeratorDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

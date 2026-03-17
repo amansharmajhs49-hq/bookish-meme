@@ -23,12 +23,13 @@ export interface ClientWithMembership extends ClientWithDetails {
   productDues: number;
   totalDue: number;
   advanceBalance: number;
+  alias_name: string | null;
 }
 
 async function fetchClientData() {
   const [clientsRes, joinsRes, paymentsRes, purchasesRes] = await Promise.all([
     supabase.from('clients').select('*').order('created_at', { ascending: true }),
-    supabase.from('joins').select('*, plan:plans(*)').order('created_at', { ascending: true }),
+    supabase.from('joins').select('*, plan:plans(*)').order('created_at', { ascending: false }),
     supabase.from('payments').select('*').order('created_at', { ascending: false }),
     supabase.from('product_purchases').select('*, product:products(*)').order('created_at', { ascending: false }),
   ]);
@@ -40,7 +41,7 @@ async function fetchClientData() {
   clientsRes.data?.sort((a, b) => {
   const dateDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   if (dateDiff !== 0) return dateDiff;
-  return b.id - a.id;
+  return String(b.id).localeCompare(String(a.id));
 });
   return {
     clients: clientsRes.data as any[],
@@ -210,6 +211,8 @@ export function useCreateClient() {
   return useMutation({
     mutationFn: async (data: {
       name: string;
+      first_name?: string;
+      last_name?: string;
       phone: string;
       goal?: string;
       remarks?: string;
@@ -226,12 +229,14 @@ export function useCreateClient() {
         .from('clients')
         .insert({
           name: data.name,
+          first_name: data.first_name || data.name.split(' ')[0] || data.name,
+          last_name: data.last_name || data.name.split(' ').slice(1).join(' ') || '',
           phone: data.phone,
           goal: data.goal,
           remarks: data.remarks,
           photo_path: data.photo_path,
           status: 'Active',
-        })
+        } as any)
         .select()
         .single();
 

@@ -20,7 +20,7 @@ const filters: { key: FilterType; label: string }[] = [
 
 export function FilterTabs({ activeFilter, onFilterChange, counts }: FilterTabsProps) {
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide -mx-4 px-4">
+    <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
       {filters.map((filter) => {
         const isActive = activeFilter === filter.key;
         const count = counts[filter.key];

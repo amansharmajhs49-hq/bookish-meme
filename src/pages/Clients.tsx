@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, LayoutGrid, AlignJustify, Search, Users, X, ArrowUpDown } from 'lucide-react';
 import { useClients, ClientWithMembership } from '@/hooks/useClients';
@@ -7,10 +8,11 @@ import { ClientCard } from '@/components/ClientCard';
 import { ClientListItem } from '@/components/ClientListItem';
 import { FilterTabs } from '@/components/FilterTabs';
 import { AddClientModal } from '@/components/AddClientModal';
+import { AddPaymentModal } from '@/components/AddPaymentModal';
+import { RenewSubscriptionModal } from '@/components/RenewSubscriptionModal';
 import { MobileNav } from '@/components/MobileNav';
 import { ClientsPageSkeleton } from '@/components/DashboardSkeleton';
 import { FilterType, ViewMode } from '@/lib/types';
-import { PullToRefresh } from '@/components/PullToRefresh';
 import { SortOption, sortItems, SORT_OPTIONS } from '@/lib/sorting';
 import { cn } from '@/lib/utils';
 import {
@@ -29,9 +31,20 @@ export default function Clients() {
   const [filter, setFilter] = useState<FilterType>(initialFilter);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [quickPayClient, setQuickPayClient] = useState<ClientWithMembership | null>(null);
+  const [quickRenewClient, setQuickRenewClient] = useState<ClientWithMembership | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleHeaderScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleHeaderScroll);
+  }, []);
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
@@ -39,6 +52,27 @@ export default function Clients() {
   useEffect(() => {
     if (location.state?.filter) setFilter(location.state.filter);
   }, [location.state]);
+
+  // Scroll restoration — double rAF ensures DOM is painted before scrolling
+  useEffect(() => {
+    if (!isLoading && clients) {
+      const savedScroll = sessionStorage.getItem('clientsListScrollPos');
+      if (savedScroll) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.scrollTo(0, parseInt(savedScroll, 10));
+          });
+        });
+      }
+    }
+
+    const handleScroll = () => {
+      sessionStorage.setItem('clientsListScrollPos', window.scrollY.toString());
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isLoading, clients]);
 
   const filterCounts = useMemo<Record<FilterType, number>>(() => {
     if (!clients) return { all: 0, paid: 0, due: 0, partial: 0, active: 0, expired: 0, left: 0, deleted: 0, inactive: 0, payment_due: 0, expiring_soon: 0 };
@@ -74,143 +108,142 @@ export default function Clients() {
     }
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter((c) => c.name.toLowerCase().includes(query) || c.phone.includes(query));
+      result = result.filter((c) => 
+        c.name.toLowerCase().includes(query) || 
+        c.phone.includes(query) ||
+        (c.alias_name && c.alias_name.toLowerCase().includes(query))
+      );
     }
     result = sortItems(
   result,
   sortBy,
-  (c) => c.name,
-  (c) => c.created_at,
-  (c) => c.latestJoin?.expiry_date ?? c.created_at,
-);
+    (c) => c.name,
+    (c) => c.created_at,
+    (c) => c.latestJoin?.expiry_date || '',
+  );
 
 return result;
-  }, [clients, filter, searchQuery]);
+  }, [clients, filter, searchQuery, sortBy]);
 
-  const handleRefresh = useCallback(async () => { await refetch(); }, [refetch]);
 
   if (authLoading || isLoading) return <ClientsPageSkeleton />;
   if (!user) return null;
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} className="page-container overflow-x-hidden">
-      {/* Header */}
-      <header className="page-header">
-        <div className="flex items-center gap-3 min-w-0">
-          <button onClick={() => navigate('/')} className="p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold tracking-tight">Clients</h1>
-            <p className="text-[11px] text-muted-foreground">{filterCounts.all} members</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          {/* View & Sort Toggle */}
-<div className="flex rounded-lg bg-muted/60 p-0.5">
-  <button
-    onClick={() => setViewMode('card')}
-    className={cn(
-      'p-1.5 rounded-md transition-all duration-200',
-      viewMode === 'card' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-    )}
-  >
-    <LayoutGrid className="h-3.5 w-3.5" />
-  </button>
-
-  <button
-    onClick={() => setViewMode('list')}
-    className={cn(
-      'p-1.5 rounded-md transition-all duration-200',
-      viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-    )}
-  >
-    <AlignJustify className="h-3.5 w-3.5" />
-  </button>
-
-  <div className="w-px h-4 bg-border self-center mx-0.5" />
-
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground">
-        <ArrowUpDown className="h-3.5 w-3.5" />
-      </button>
-    </DropdownMenuTrigger>
-
-    <DropdownMenuContent align="end" className="rounded-xl min-w-[160px]">
-      {SORT_OPTIONS.map((opt) => (
-        <DropdownMenuItem
-          key={opt.key}
-          onClick={() => setSortBy(opt.key)}
-          className={cn(
-            'text-xs py-2 cursor-pointer gap-2',
-            sortBy === opt.key && 'bg-accent font-semibold'
-          )}
-        >
-          <span>{opt.icon}</span>
-          <span>{opt.label}</span>
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
-</div>
-            <button
-              onClick={() => setViewMode('card')}
-              className={cn(
-                'p-1.5 rounded-md transition-all duration-200',
-                viewMode === 'card' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              )}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'p-1.5 rounded-md transition-all duration-200',
-                viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              )}
-            >
-              <AlignJustify className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="h-9 w-9 flex items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 hover:opacity-90 transition-opacity shrink-0"
-          >
-            <Plus className="h-4.5 w-4.5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="px-4 pt-3 pb-24 space-y-3 overflow-x-hidden">
-        {/* Search */}
+    <div className="page-container min-h-screen">
+      <div className={cn(
+        "sticky top-0 z-40 transition-all duration-300 ease-in-out",
+        isScrolled 
+          ? "bg-background/90 backdrop-blur-xl border-b border-border/50 shadow-md shadow-black/5" 
+          : "bg-background/0 backdrop-blur-none border-b border-transparent"
+      )}>
+        {/* Glass highlight line */}
         <div className={cn(
-          'relative rounded-2xl border bg-card transition-all duration-200',
-          searchFocused ? 'border-primary shadow-sm shadow-primary/10' : 'border-border'
-        )}>
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search name or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            className="w-full bg-transparent pl-10 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-muted hover:bg-muted/80 transition-colors"
-            >
-              <X className="h-3 w-3 text-muted-foreground" />
+          "absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent transition-opacity duration-500",
+          isScrolled ? "opacity-100" : "opacity-0"
+        )} />
+        
+        {/* Header */}
+        <header className="flex items-center justify-between px-4 pt-3 pb-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => navigate('/')} className="p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
+              <ArrowLeft className="h-5 w-5" />
             </button>
-          )}
-        </div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight">Clients</h1>
+              <p className="text-[11px] text-muted-foreground">{filterCounts.all} members</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex rounded-lg bg-muted/60 p-0.5 sm:p-1 gap-1">
+              <div className="flex rounded-md bg-background/50 p-0.5 shadow-sm shrink-0">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={cn(
+                    'p-1.5 sm:p-2 rounded-md transition-all duration-200',
+                    viewMode === 'card' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    'p-1.5 sm:p-2 rounded-md transition-all duration-200',
+                    viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <AlignJustify className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="w-px h-4 bg-border self-center mx-0 opacity-30" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/50 transition-all duration-200 active:scale-95">
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <span className="text-[10px] font-semibold hidden md:inline uppercase tracking-wider">Sort</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl min-w-[170px] p-1 shadow-xl border-primary/10">
+                  <div className="px-2 py-1.5 mb-1 border-b border-border/50">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sort Items By</p>
+                  </div>
+                  {SORT_OPTIONS.map((opt) => (
+                    <DropdownMenuItem
+                      key={opt.key}
+                      onClick={() => setSortBy(opt.key)}
+                      className={cn(
+                        'text-xs py-2.5 px-3 cursor-pointer gap-3 rounded-lg transition-colors',
+                        sortBy === opt.key ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted font-medium'
+                      )}
+                    >
+                      <span className="text-sm">{opt.icon}</span>
+                      <span>{opt.label}</span>
+                      {sortBy === opt.key && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
 
-        {/* Filter Tabs */}
-        <FilterTabs activeFilter={filter} onFilterChange={setFilter} counts={filterCounts} />
+        {/* Improved Search & Tabs Section */}
+        <div className="px-4 pb-2 space-y-3">
+          <div className={cn(
+            'relative group rounded-2xl border transition-all duration-300',
+            searchFocused ? 'border-primary shadow-lg shadow-primary/10 bg-card' : 'border-border bg-card/50'
+          )}>
+            <Search className={cn(
+              "absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors duration-300",
+              searchFocused ? "text-primary" : "text-muted-foreground"
+            )} />
+            <input
+              type="text"
+              placeholder="Search name or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="w-full bg-transparent pl-10 pr-9 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none font-medium"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground transition-all"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          
+          <div className="relative -mx-4 px-4 overflow-hidden">
+             <FilterTabs activeFilter={filter} onFilterChange={setFilter} counts={filterCounts} />
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 pt-2 pb-6 space-y-2.5">
 
         {/* Result info */}
         {(searchQuery || filter !== 'all') && filteredClients.length > 0 && (
@@ -236,7 +269,12 @@ return result;
                 className="animate-fade-in"
                 style={{ animationDelay: `${Math.min(i * 40, 400)}ms`, animationFillMode: 'both' }}
               >
-                <ClientCard client={client} />
+                <ClientCard
+                  client={client}
+                  onAddPayment={setQuickPayClient}
+                  onRenew={setQuickRenewClient}
+                  searchQuery={searchQuery}
+                />
               </div>
             ))}
           </div>
@@ -288,8 +326,44 @@ return result;
         )}
       </div>
 
+      {/* close sticky header wrapper */}
+      </div>
+
+      <motion.button
+        className="fixed bottom-24 right-5 p-4 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40 z-40"
+        onClick={() => setShowAddModal(true)}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 20 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <Plus className="h-6 w-6" />
+      </motion.button>
+
       <MobileNav />
       <AddClientModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
-    </PullToRefresh>
+
+      {quickPayClient && (
+        <AddPaymentModal
+          isOpen={true}
+          onClose={() => setQuickPayClient(null)}
+          clientId={quickPayClient.id}
+          clientName={quickPayClient.name}
+          membershipDues={quickPayClient.dueAmount}
+          productDues={quickPayClient.productDues}
+          latestJoinId={quickPayClient.latestJoin?.id}
+        />
+      )}
+      {quickRenewClient && (
+        <RenewSubscriptionModal
+          isOpen={true}
+          onClose={() => setQuickRenewClient(null)}
+          clientId={quickRenewClient.id}
+          clientName={quickRenewClient.name}
+          clientPhone={quickRenewClient.phone}
+          currentJoin={quickRenewClient.latestJoin}
+        />
+      )}
+    </div>
   );
 }

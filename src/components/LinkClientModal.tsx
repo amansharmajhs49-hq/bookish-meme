@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Link2, Search, UserPlus, Users } from 'lucide-react';
+import { X, Link2, Search, UserPlus, Users, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useIsFeatureLocked } from '@/hooks/useSubscription';
 
 interface LinkClientModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface ClientOption {
 
 export function LinkClientModal({ isOpen, onClose, clientId, clientName }: LinkClientModalProps) {
   const { toast } = useToast();
+  const { isLocked, message } = useIsFeatureLocked('client_linking');
   const [search, setSearch] = useState('');
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,19 @@ export function LinkClientModal({ isOpen, onClose, clientId, clientName }: LinkC
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {loading ? (
+            {isLocked ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
+                <div className="p-4 rounded-3xl bg-destructive/10 text-destructive shadow-inner">
+                  <Lock className="h-10 w-10" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-black italic uppercase tracking-tight">Feature Locked</h3>
+                  <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                    {message}
+                  </p>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="space-y-2.5">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-14 bg-muted/30 rounded-xl animate-pulse" />

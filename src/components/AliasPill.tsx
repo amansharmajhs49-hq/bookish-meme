@@ -1,4 +1,5 @@
-import { Tag } from 'lucide-react';
+import { Tag, Lock } from 'lucide-react';
+import { useIsFeatureLocked } from '@/hooks/useSubscription';
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +11,8 @@ interface AliasPillProps {
 }
 
 export function AliasPill({ alias }: AliasPillProps) {
-  if (!alias) return null;
+  const { isLocked } = useIsFeatureLocked('alias_system');
+  if (!alias || isLocked) return null;
 
   return (
     <Tooltip>

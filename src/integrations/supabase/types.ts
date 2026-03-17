@@ -227,9 +227,11 @@ export type Database = {
           advance_balance: number | null
           alias_name: string | null
           created_at: string
+          first_name: string | null
           goal: string | null
           id: string
           is_inactive: boolean | null
+          last_name: string | null
           name: string
           onboarding_completed: boolean
           phone: string
@@ -243,9 +245,11 @@ export type Database = {
           advance_balance?: number | null
           alias_name?: string | null
           created_at?: string
+          first_name?: string | null
           goal?: string | null
           id?: string
           is_inactive?: boolean | null
+          last_name?: string | null
           name: string
           onboarding_completed?: boolean
           phone: string
@@ -259,9 +263,11 @@ export type Database = {
           advance_balance?: number | null
           alias_name?: string | null
           created_at?: string
+          first_name?: string | null
           goal?: string | null
           id?: string
           is_inactive?: boolean | null
+          last_name?: string | null
           name?: string
           onboarding_completed?: boolean
           phone?: string
@@ -356,6 +362,110 @@ export type Database = {
             columns: ["join_id"]
             isOneToOne: false
             referencedRelation: "joins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_locks: {
+        Row: {
+          feature_key: string
+          is_locked: boolean
+          locked_message: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          feature_key: string
+          is_locked?: boolean
+          locked_message?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          feature_key?: string
+          is_locked?: boolean
+          locked_message?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hosting_plans_v2: {
+        Row: {
+          billing_cycle: string
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          plan_name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          plan_name: string
+          price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          plan_name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hosting_subscriptions: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          expiry_date: string
+          id: string
+          payment_link: string | null
+          payment_qr: string | null
+          plan_id: string | null
+          start_date: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          expiry_date: string
+          id?: string
+          payment_link?: string | null
+          payment_qr?: string | null
+          plan_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          expiry_date?: string
+          id?: string
+          payment_link?: string | null
+          payment_qr?: string | null
+          plan_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hosting_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hosting_plans_v2"
             referencedColumns: ["id"]
           },
         ]
@@ -757,6 +867,75 @@ export type Database = {
         }
         Relationships: []
       }
+      website_settings: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          description: string | null
+          facebook_url: string | null
+          gallery_enabled: boolean | null
+          gym_name: string | null
+          hero_bg_url: string | null
+          id: string
+          instagram_url: string | null
+          logo_url: string | null
+          payment_name: string | null
+          primary_color: string | null
+          tagline: string | null
+          timings_weekday: string | null
+          timings_weekend: string | null
+          updated_at: string | null
+          upi_id: string | null
+          upi_qr: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          description?: string | null
+          facebook_url?: string | null
+          gallery_enabled?: boolean | null
+          gym_name?: string | null
+          hero_bg_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          payment_name?: string | null
+          primary_color?: string | null
+          tagline?: string | null
+          timings_weekday?: string | null
+          timings_weekend?: string | null
+          updated_at?: string | null
+          upi_id?: string | null
+          upi_qr?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          description?: string | null
+          facebook_url?: string | null
+          gallery_enabled?: boolean | null
+          gym_name?: string | null
+          hero_bg_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          payment_name?: string | null
+          primary_color?: string | null
+          tagline?: string | null
+          timings_weekday?: string | null
+          timings_weekend?: string | null
+          updated_at?: string | null
+          upi_id?: string | null
+          upi_qr?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_reminders: {
         Row: {
           client_id: string
@@ -820,7 +999,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "super_admin" | "admin" | "user"
+      app_role: "super_admin" | "admin" | "user" | "moderator"
       client_status: "Active" | "Expired" | "Left" | "Deleted"
       membership_status: "ACTIVE" | "PAYMENT_DUE" | "EXPIRED" | "INACTIVE"
     }
@@ -950,7 +1129,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "user"],
+      app_role: ["super_admin", "admin", "user", "moderator"],
       client_status: ["Active", "Expired", "Left", "Deleted"],
       membership_status: ["ACTIVE", "PAYMENT_DUE", "EXPIRED", "INACTIVE"],
     },

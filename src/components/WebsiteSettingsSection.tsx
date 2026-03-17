@@ -90,9 +90,66 @@ export function WebsiteSettingsSection() {
     }
   }, [appSettings]);
 
+  const syncToWebsiteSettingsTable = async (values: Record<string, any>) => {
+    try {
+      // Fetch the single website_settings row
+      const { data: existing } = await supabase.from('website_settings').select('id').limit(1).maybeSingle();
+      if (!existing) {
+        // Create the row if it doesn't exist
+        await supabase.from('website_settings').insert({
+          gym_name: values.gym_name || 'Aesthetic Gym',
+          contact_phone: values.phone || '',
+          contact_email: values.email || '',
+          address: values.address || '',
+          tagline: values.tagline || '',
+          description: values.description || '',
+          whatsapp_number: values.whatsapp_number || '',
+          instagram_url: values.instagram_url || '',
+          facebook_url: values.facebook_url || '',
+          timings_weekday: values.timings_weekday || '',
+          timings_weekend: values.timings_weekend || '',
+          gallery_enabled: values.gallery_enabled ?? false,
+          primary_color: values.primary_color || '#9C9C9C',
+          logo_url: values.logo_url || '',
+          hero_bg_url: values.hero_bg_url || '',
+          upi_id: values.upi_id || '',
+          upi_qr: values.upi_qr || '',
+          payment_name: values.payment_name || '',
+        });
+        return;
+      }
+
+      await supabase.from('website_settings').update({
+        gym_name: values.gym_name || '',
+        contact_phone: values.phone || '',
+        contact_email: values.email || '',
+        address: values.address || '',
+        tagline: values.tagline || '',
+        description: values.description || '',
+        whatsapp_number: values.whatsapp_number || '',
+        instagram_url: values.instagram_url || '',
+        facebook_url: values.facebook_url || '',
+        timings_weekday: values.timings_weekday || '',
+        timings_weekend: values.timings_weekend || '',
+        gallery_enabled: values.gallery_enabled ?? false,
+        primary_color: values.primary_color || '#9C9C9C',
+        logo_url: values.logo_url || '',
+        hero_bg_url: values.hero_bg_url || '',
+        upi_id: values.upi_id || '',
+        upi_qr: values.upi_qr || '',
+        payment_name: values.payment_name || '',
+        updated_at: new Date().toISOString(),
+      }).eq('id', existing.id);
+    } catch (e) {
+      console.error('Failed to sync website_settings table:', e);
+    }
+  };
+
   const handleSave = async () => {
     try {
-      await updateSetting.mutateAsync({ key: 'website_settings', value: buildValue() });
+      const values = buildValue();
+      await updateSetting.mutateAsync({ key: 'website_settings', value: values });
+      await syncToWebsiteSettingsTable(values);
       toast({ title: 'Website settings saved!' });
       setEditing(false);
     } catch {
@@ -103,7 +160,9 @@ export function WebsiteSettingsSection() {
   const handleColorChange = async (color: string) => {
     setPrimaryColor(color);
     try {
-      await updateSetting.mutateAsync({ key: 'website_settings', value: buildValue({ primary_color: color }) });
+      const values = buildValue({ primary_color: color });
+      await updateSetting.mutateAsync({ key: 'website_settings', value: values });
+      await syncToWebsiteSettingsTable(values);
       toast({ title: 'Theme color updated!' });
     } catch {
       toast({ title: 'Failed to update color', variant: 'destructive' });
@@ -114,7 +173,9 @@ export function WebsiteSettingsSection() {
     const next = !galleryEnabled;
     setGalleryEnabled(next);
     try {
-      await updateSetting.mutateAsync({ key: 'website_settings', value: buildValue({ gallery_enabled: next }) });
+      const values = buildValue({ gallery_enabled: next });
+      await updateSetting.mutateAsync({ key: 'website_settings', value: values });
+      await syncToWebsiteSettingsTable(values);
       toast({ title: `Gallery ${next ? 'enabled' : 'disabled'} on website` });
     } catch {
       toast({ title: 'Failed to update', variant: 'destructive' });

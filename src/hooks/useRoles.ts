@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'super_admin' | 'admin' | 'user';
+export type AppRole = 'moderator' | 'super_admin' | 'admin' | 'user';
 
 interface UserRole {
   id: string;
@@ -12,15 +12,16 @@ interface UserRole {
 }
 
 /**
- * Hook to check if current user is super admin
+ * Hook to check if current user is super admin or moderator
  */
 export function useIsSuperAdmin() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   return useQuery({
-    queryKey: ['is_super_admin', user?.id],
+    queryKey: ['is_super_admin', user?.id, role],
     queryFn: async (): Promise<boolean> => {
       if (!user?.id) return false;
+      if (role === 'moderator') return true;
       
       const { data, error } = await supabase
         .rpc('is_super_admin', { _user_id: user.id });
@@ -38,21 +39,22 @@ export function useIsSuperAdmin() {
 }
 
 /**
- * Hook to check if current user has admin or super_admin role
+ * Hook to check if current user has admin, super_admin, or moderator role
  */
 export function useIsAdmin() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   return useQuery({
-    queryKey: ['is_admin', user?.id],
+    queryKey: ['is_admin', user?.id, role],
     queryFn: async (): Promise<boolean> => {
       if (!user?.id) return false;
+      if (role === 'moderator' || role === 'super_admin' || role === 'admin') return true;
       
       const { data, error } = await supabase
-        .from('user_roles')
+        .from('user_roles' as any)
         .select('role')
         .eq('user_id', user.id)
-        .in('role', ['super_admin', 'admin']);
+        .in('role', ['moderator', 'super_admin', 'admin'] as any);
       
       if (error) {
         console.error('Error checking admin status:', error);
@@ -77,10 +79,10 @@ export function useUserRoles() {
     queryFn: async (): Promise<UserRole[]> => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('user_roles')
+      const { data, error } = await (supabase
+        .from('user_roles' as any)
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id) as any);
       
       if (error) {
         console.error('Error fetching user roles:', error);
@@ -102,8 +104,8 @@ export function useAssignRole() {
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
       const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role });
+        .from('user_roles' as any)
+        .insert({ user_id: userId, role: role as any } as any);
       
       if (error) throw error;
     },
@@ -122,10 +124,10 @@ export function useRemoveRole() {
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
       const { error } = await supabase
-        .from('user_roles')
+        .from('user_roles' as any)
         .delete()
         .eq('user_id', userId)
-        .eq('role', role);
+        .eq('role', role as any);
       
       if (error) throw error;
     },

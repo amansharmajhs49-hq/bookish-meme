@@ -3,10 +3,11 @@ import { Link2, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface LinkedClient {
@@ -117,31 +118,31 @@ export function ClientLinkPill({ clientId, showNames = false, compact = false }:
     );
   }
 
-  // Default pill with tooltip
+  // Default pill with dropdown
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-primary/10 text-primary/70 border border-primary/15 cursor-help transition-all duration-200">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-primary/10 text-primary/70 border border-primary/15 cursor-pointer transition-all duration-200 focus:outline-none">
           <Link2 className="w-2.5 h-2.5" />
           {linkedClients.length}
           {hasDuesAny && (
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive animate-pulse" />
           )}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs p-2.5 space-y-1.5 max-w-[200px]">
-        <p className="font-semibold text-[11px] flex items-center gap-1.5 mb-1.5">
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" sideOffset={4} className="text-xs p-1.5 min-w-[180px]">
+        <div className="font-semibold text-[11px] flex items-center gap-1.5 p-1.5 mb-1 text-muted-foreground border-b border-border">
           <Users className="w-3 h-3 text-primary" />
           Linked Members
-        </p>
+        </div>
         {linkedClients.map((lc) => (
-          <button
+          <DropdownMenuItem
             key={lc.id}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/clients/${lc.id}`);
             }}
-            className="flex items-center gap-2 w-full text-left hover:text-primary transition-colors py-1 px-1.5 rounded-md hover:bg-muted/50"
+            className="flex items-center gap-2 w-full cursor-pointer py-1.5 px-2 rounded-sm"
           >
             <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary shrink-0">
               {lc.name.charAt(0)}
@@ -150,9 +151,9 @@ export function ClientLinkPill({ clientId, showNames = false, compact = false }:
             {lc.hasDues && (
               <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0 ml-auto" />
             )}
-          </button>
+          </DropdownMenuItem>
         ))}
-      </TooltipContent>
-    </Tooltip>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

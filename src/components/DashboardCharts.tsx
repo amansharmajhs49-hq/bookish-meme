@@ -21,6 +21,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 
 interface DashboardChartsProps {
   clients: ClientWithMembership[];
+  onFilterClick?: (filter: string) => void;
 }
 
 // ── Custom Tooltip ──────────────────────────────────────
@@ -92,7 +93,7 @@ function SectionHeader({ title, icon: Icon }: { title: string; icon: any }) {
   );
 }
 
-export function DashboardCharts({ clients }: DashboardChartsProps) {
+export function DashboardCharts({ clients, onFilterClick }: DashboardChartsProps) {
   // ── Revenue + Dues by month (last 6 months) ────────────
   const revenueData = useMemo(() => {
     const months: { month: string; revenue: number; dues: number }[] = [];
@@ -249,6 +250,19 @@ export function DashboardCharts({ clients }: DashboardChartsProps) {
   const totalExpiring = expiryForecast.reduce((s, b) => s + b.count, 0);
   const totalStatusCount = statusDistribution.reduce((s, d) => s + d.value, 0);
 
+  // ── Member growth funnel (last 6 months cohort) ───────
+  const growthFunnel = useMemo(() => {
+    const sixMonthsAgo = subMonths(new Date(), 6);
+    const recentJoiners = clients.filter(c =>
+      c.status !== 'Deleted' &&
+      c.joins.some(j => new Date(j.join_date) >= sixMonthsAgo)
+    );
+    const joined = recentJoiners.length;
+    const stillActive = recentJoiners.filter(c => c.membershipStatus === 'ACTIVE').length;
+    const renewed = recentJoiners.filter(c => c.joins.length >= 2).length;
+    return { joined, stillActive, renewed };
+  }, [clients]);
+
   return (
     <div className="space-y-5">
       {/* ── KPI Summary Cards ───────────────────────────── */}
@@ -395,23 +409,22 @@ export function DashboardCharts({ clients }: DashboardChartsProps) {
           <SectionHeader title="Expiry Forecast" icon={Clock} />
           <div className="space-y-3 pt-1">
             {expiryForecast.map((w) => {
-              const barColorMap = {
-                destructive: 'bg-destructive',
-                warning: 'bg-yellow-500',
-                primary: 'bg-primary',
-                muted: 'bg-muted-foreground',
-              };
-              const textColorMap = {
-                destructive: 'text-destructive',
-                warning: 'text-yellow-500',
-                primary: 'text-primary',
-                muted: 'text-muted-foreground',
-              };
+              const barColorMap = { destructive: 'bg-destructive', warning: 'bg-yellow-500', primary: 'bg-primary', muted: 'bg-muted-foreground' };
+              const textColorMap = { destructive: 'text-destructive', warning: 'text-yellow-500', primary: 'text-primary', muted: 'text-muted-foreground' };
+              const filterMap: Record<string, string> = { 'This Week': 'expiring_soon', 'Week 2': 'expiring_soon', 'Week 3': 'expiring_soon', 'Week 4': 'expiring_soon' };
               return (
-                <div key={w.label} className="space-y-1">
+                <button
+                  key={w.label}
+                  onClick={() => w.count > 0 && onFilterClick?.('expiring_soon')}
+                  disabled={w.count === 0}
+                  className={cn('w-full space-y-1 text-left', w.count > 0 && onFilterClick && 'hover:opacity-80 transition-opacity cursor-pointer', w.count === 0 && 'cursor-default')}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium text-muted-foreground">{w.label}</span>
-                    <span className={cn('text-sm font-bold tabular-nums', textColorMap[w.accent])}>{w.count}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('text-sm font-bold tabular-nums', textColorMap[w.accent])}>{w.count}</span>
+                      {w.count > 0 && onFilterClick && <span className="text-[9px] text-muted-foreground">→</span>}
+                    </div>
                   </div>
                   <div className="w-full h-2 rounded-full bg-muted/80 overflow-hidden">
                     <div
@@ -419,7 +432,7 @@ export function DashboardCharts({ clients }: DashboardChartsProps) {
                       style={{ width: `${totalExpiring > 0 ? Math.max((w.count / totalExpiring) * 100, w.count > 0 ? 8 : 0) : 0}%` }}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -496,6 +509,42 @@ export function DashboardCharts({ clients }: DashboardChartsProps) {
           )}
         </div>
       </div>
+
+      {/* ── Member Growth Funnel ──────────────────────── */}
+      {growthFunnel.joined > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+          <SectionHeader title="6-Month Retention Funnel" icon={Users} />
+          <div className="space-y-3">
+            {[
+              { label: 'Joined', value: growthFunnel.joined, pct: 100, color: 'bg-primary', text: 'text-primary' },
+              { label: 'Still Active', value: growthFunnel.stillActive, pct: growthFunnel.joined > 0 ? Math.round((growthFunnel.stillActive / growthFunnel.joined) * 100) : 0, color: 'bg-green-500', text: 'text-green-500' },
+              { label: 'Renewed', value: growthFunnel.renewed, pct: growthFunnel.joined > 0 ? Math.round((growthFunnel.renewed / growthFunnel.joined) * 100) : 0, color: 'bg-emerald-600', text: 'text-emerald-600' },
+            ].map((stage, i) => (
+              <div key={stage.label} className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">{stage.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn('font-bold tabular-nums', stage.text)}>{stage.value}</span>
+                    <span className="text-muted-foreground">({stage.pct}%)</span>
+                  </div>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className={cn('h-full rounded-full transition-all duration-700', stage.color)}
+                    style={{ width: `${stage.pct}%`, transitionDelay: `${i * 150}ms` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground border-t border-border pt-2">
+            {growthFunnel.joined} members joined in last 6 months · {growthFunnel.renewed > 0 ? `${Math.round((growthFunnel.renewed / growthFunnel.joined) * 100)}% renewal rate` : 'No renewals yet'}
+          </p>
+        </div>
+      )}
     </div>
+  </div>
+  </div>
+  </div>
   );
 }

@@ -31,12 +31,10 @@ export function ClientAvatar({ src, name, size = 'md', className }: ClientAvatar
     lg: 'h-24 w-24 text-2xl',
   };
 
-  const initials = name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const rawParts = name.trim().split(/\s+/).filter(Boolean);
+  const initials = rawParts.length >= 2
+    ? (rawParts[0][0] + rawParts[rawParts.length - 1][0]).toUpperCase()
+    : (rawParts[0]?.slice(0, 2) || '??').toUpperCase();
 
   if (src) {
     return (

@@ -5,61 +5,61 @@
 @layer base {
   /* ===== LIGHT MODE ===== */
   :root {
-    --background: 220 16% 96%;
-    --foreground: 220 30% 10%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 10%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 10%;
+    --popover-foreground: 0 0% 10%;
 
     --primary: 0 0% 61%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 220 30% 14%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 12% 44%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
 
     --accent: 0 0% 61%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 60% 44%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 87%;
+    --border: 0 0% 90%;
     --input: 0 0% 100%;
-    --ring: 0 68% 46%;
+    --ring: 0 0% 61%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 30% 10%;
-    --sidebar-primary: 0 68% 46%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 0 0% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 94%;
-    --sidebar-accent-foreground: 220 30% 14%;
-    --sidebar-border: 220 16% 89%;
-    --sidebar-ring: 0 68% 46%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 0 0% 61%;
 
-    /* Semantic colors — richer for light */
-    --success: 152 60% 32%;
+    /* Semantic colors — high energy for gym */
+    --success: 142 72% 29%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 82% 42%;
-    --warning-foreground: 0 0% 100%;
-    --info: 210 80% 42%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
+    --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0, 68%, 46%), hsl(0, 72%, 38%));
-    --gradient-dark: linear-gradient(180deg, hsl(220, 16%, 96%), hsl(220, 16%, 93%));
-    --gradient-card: linear-gradient(160deg, hsl(0, 0%, 100%), hsl(220, 16%, 97%));
+    /* Enhanced Gradients - Monochrome Edition */
+    --gradient-primary: linear-gradient(135deg, hsl(0, 0%, 61%), hsl(0, 0%, 45%));
+    --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 98%), hsl(0, 0%, 95%));
+    --gradient-card: linear-gradient(160deg, hsl(0, 0%, 100%), hsl(0, 0%, 99%));
 
-    /* Shadows for light mode — deeper, warmer */
-    --shadow-card: 0 1px 3px hsl(220 20% 10% / 0.05), 0 4px 8px hsl(220 20% 10% / 0.03);
-    --shadow-card-hover: 0 4px 16px hsl(0 60% 46% / 0.08), 0 2px 6px hsl(220 20% 10% / 0.04);
+    /* Professional Shadows - Monochrome Edition */
+    --shadow-card: 0 2px 8px -2px hsl(0 0% 20% / 0.05), 0 4px 16px -4px hsl(0 0% 10% / 0.03);
+    --shadow-card-hover: 0 8px 32px -8px hsl(0 0% 61% / 0.12), 0 4px 12px -2px hsl(0 0% 20% / 0.04);
   }
 
   /* ===== DARK MODE ===== */
@@ -73,7 +73,7 @@
     --popover: 226 14% 11%;
     --popover-foreground: 220 14% 93%;
 
-    --primary: 0 72% 51%;
+    --primary: 0 0% 61%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 226 13% 16%;
@@ -82,7 +82,7 @@
     --muted: 226 13% 18%;
     --muted-foreground: 220 10% 58%;
 
-    --accent: 0 72% 51%;
+    --accent: 0 0% 61%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
@@ -90,16 +90,16 @@
 
     --border: 226 13% 20%;
     --input: 226 13% 15%;
-    --ring: 0 72% 51%;
+    --ring: 0 0% 61%;
 
     --sidebar-background: 228 14% 8%;
     --sidebar-foreground: 220 14% 93%;
-    --sidebar-primary: 0 72% 51%;
+    --sidebar-primary: 0 0% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 226 13% 16%;
     --sidebar-accent-foreground: 220 14% 93%;
     --sidebar-border: 226 13% 18%;
-    --sidebar-ring: 0 72% 51%;
+    --sidebar-ring: 0 0% 61%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -108,7 +108,7 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(0, 72%, 40%));
+    --gradient-primary: linear-gradient(135deg, hsl(0, 0%, 61%), hsl(0, 0%, 40%));
     --gradient-dark: linear-gradient(180deg, hsl(226, 14%, 11%), hsl(228, 14%, 7%));
     --gradient-card: linear-gradient(145deg, hsl(226, 14%, 13%), hsl(226, 14%, 9%));
   }
@@ -122,6 +122,8 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   /* Prevent odd theme/accent morphing on first paint / runtime theme updates */
@@ -153,15 +155,17 @@
 
 @layer components {
   .stat-card {
-    @apply relative overflow-hidden rounded-xl border border-border bg-card p-4 transition-all duration-200;
+    @apply relative overflow-hidden rounded-xl border border-border bg-card p-4;
     background: var(--gradient-card);
     box-shadow: var(--shadow-card);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
   }
 
   .stat-card:hover {
     @apply border-primary/30;
     box-shadow: var(--shadow-card-hover);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
   .stat-card-clickable {
@@ -251,7 +255,8 @@
   }
 
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: opacity, transform;
   }
 
   @keyframes fadeIn {
@@ -301,25 +306,29 @@
   }
 
   .animate-slide-in-right {
-    animation: slideInRight 0.3s ease-out;
+    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: transform, opacity;
   }
 
   .modal-overlay {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease-out;
+    /* Reduced blur for better animation performance */
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: opacity;
   }
 
   .modal-content {
     @apply relative w-full max-w-md bg-card rounded-2xl p-6 shadow-2xl border border-border;
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
   }
 
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateY(20px) scale(0.95);
+      transform: translateY(20px) scale(0.97);
     }
     to {
       opacity: 1;
@@ -354,5 +363,21 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  @keyframes anim-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+  }
+
+  .anim-pulse {
+    animation: anim-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

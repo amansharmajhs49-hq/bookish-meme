@@ -36,7 +36,7 @@ const DEFAULTS: WebsiteSettings = {
   timings_weekend: 'Sunday: 6:00 AM – 12:00 PM',
   gallery_enabled: false,
   primary_color: '#9C9C9C',
-  logo_url: '',
+  logo_url: './public/icon-192.png',
   hero_bg_url: '',
 };
 

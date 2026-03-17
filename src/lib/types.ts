@@ -17,6 +17,7 @@ export interface Client {
   status: 'Active' | 'Expired' | 'Left' | 'Deleted';
   goal: string | null;
   remarks: string | null;
+  alias_name: string | null;
   created_at: string;
   updated_at: string;
   photo_url?: string;
